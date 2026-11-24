@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "id": "mrnv.catrun",
+  "name": "CatRun",
+  "version": "1.1.0",
+  "author": "VivatVibe",
+  "license": "MIT",
+  "description": "Animated running cat in the Omarchy bar with a Cat Gang device race popup (CPU, GPU, RAM, Disk, Net).",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "CatRun",
+    "description": "Animated running cat in the bar plus a clickable Cat Gang race where each cat guards a device and races by live usage.",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": {
+      "catSize": 16,
+      "showPercent": false,
+      "sleepThreshold": 0,
+      "invertDirection": false,
+      "raceMode": "race"
+    },
+    "schema": [
+      {
+        "key": "catSize",
+        "type": "integer",
+        "label": "Cat size (px)",
+        "min": 8,
+        "max": 24,
+        "step": 1,
+        "defaultValue": 16
+      },
+      {
+        "key": "showPercent",
+        "type": "boolean",
+        "label": "Show CPU percentage",
+        "defaultValue": false
+      },
+      {
+        "key": "sleepThreshold",
+        "type": "integer",
+        "label": "Sleep threshold (%)",
+        "min": 0,
+        "max": 30,
+        "step": 1,
+        "defaultValue": 0
+      },
+      {
+        "key": "invertDirection",
+        "type": "boolean",
+        "label": "Run left",
+        "defaultValue": false
+      },
+      {
+        "key": "raceMode",
+        "type": "enum",
+        "label": "Popup race mode",
+        "options": [
+          { "value": "race", "label": "Race (laps)" },
+          { "value": "load", "label": "Load (%)" }
+        ],
+        "defaultValue": "race"
+      }
+    ]
+  }
+}
