@@ -6,7 +6,7 @@ An animated running cat widget for the Omarchy status bar with a live **Cat Gang
 
 ## Features
 
-- **Live Bar Companion**: A vector running cat in the Omarchy bar whose stride cadence speeds up with live CPU load (and optionally displays the CPU percentage or naps below a configurable threshold).
+- **Live Bar Companion**: A lively vector running cat in the Omarchy bar whose stride cadence speeds up with live CPU load, with adjustable speed (`0.5x`–`3.0x` via popup slider, mouse wheel on the bar icon, keyboard, or IPC) and optional CPU percentage or sleep threshold.
 - **Cat Gang Device Race (`Race` & `Load` modes)**: Click the bar icon to open a 5-lane real-time race where each cat guards a device:
   - **CPU · Mochi** — Ginger tabby (`/proc/stat`)
   - **GPU · Pixel** — Cyber-visor cat (`/sys/class/drm/card*/device/gpu_busy_percent` and `nvidia-smi` only when an NVIDIA GPU is already active, avoiding dGPU wakeups on battery)
@@ -17,8 +17,9 @@ An animated running cat widget for the Omarchy status bar with a live **Cat Gang
 - **Interactive Device Inspector**: Click any lane (or press `1`–`5`) to inspect live breakdowns (CPU load & top processes, GPU model/VRAM/temp, RAM used/available/cached, Disk read/write rates, Network down/up & active interface).
 - **Live Translations**: Includes English (`en`) and Thai (`th`) catalogs that follow Omarchy's language setting live without restarting the shell.
 - **Keyboard & IPC Support**:
-  - Popup shortcuts: `Space` (pause/resume), `m` (toggle Race/Load mode), `0` (reset laps), `1`–`5` (inspect device), `p` (toggle bar %), `r` (flip direction), `b` (open `btop`).
-  - IPC commands via `omarchy-shell mrnv.catrun <method>`: `open`, `close`, `toggle`, `pause`, `resume`, `togglePause`, `togglePercent`, `setSize <px>`, `setRaceMode <race|load>`, `resetRace`, `selectDevice <cpu|gpu|ram|disk|net>`, `state`.
+  - Popup shortcuts: `Space` (pause/resume), `+`/`-` or `[`/`]` (adjust bar cat speed), `m` (toggle Race/Load mode), `0` (reset laps), `1`–`5` (inspect device), `p` (toggle bar %), `r` (flip direction), `b` (open `btop`).
+  - Bar interactions: Left-click (open popup), Right-click (toggle CPU %), Middle-click (pause/resume), Scroll wheel (adjust bar cat speed).
+  - IPC commands via `omarchy-shell mrnv.catrun <method>`: `open`, `close`, `toggle`, `pause`, `resume`, `togglePause`, `togglePercent`, `setSize <px>`, `setSpeed <50..300>`, `setRaceMode <race|load>`, `resetRace`, `selectDevice <cpu|gpu|ram|disk|net>`, `state`.
 
 ## Installation
 
@@ -43,6 +44,7 @@ Settings can be adjusted directly inside the CatRun popup's **Settings** section
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
 | `catSize` | integer (`8`–`24`) | `16` | Bar cat icon height in pixels |
+| `barSpeed` | integer (`50`–`300`) | `100` | Main bar cat running speed percentage (`50` = `0.5x`, `100` = `1.0x`, `300` = `3.0x`) |
 | `showPercent` | boolean | `false` | Show live CPU percentage beside the bar cat |
 | `sleepThreshold` | integer (`0`–`30`) | `0` | Usage percentage below which cats nap (`0` disables napping) |
 | `invertDirection` | boolean | `false` | Mirror the bar cat to run left |

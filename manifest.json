@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "mrnv.catrun",
   "name": "CatRun",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "author": "VivatVibe",
   "license": "MIT",
   "description": "Animated running cat in the Omarchy bar with a Cat Gang device race popup (CPU, GPU, RAM, Disk, Net).",
@@ -20,6 +20,7 @@
     "defaultSection": "right",
     "defaults": {
       "catSize": 16,
+      "barSpeed": 100,
       "showPercent": false,
       "sleepThreshold": 0,
       "invertDirection": false,
@@ -34,6 +35,15 @@
         "max": 24,
         "step": 1,
         "defaultValue": 16
+      },
+      {
+        "key": "barSpeed",
+        "type": "integer",
+        "label": "Bar cat speed (%)",
+        "min": 50,
+        "max": 300,
+        "step": 10,
+        "defaultValue": 100
       },
       {
         "key": "showPercent",

@@ -59,6 +59,8 @@
   "stat.idle": "ว่าง",
   "processes.empty": "ไม่มีโปรเซสที่ทำงานอยู่",
   "setting.catSize": "ขนาดแมว",
+  "setting.barSpeed": "ความเร็วแมวบนแถบ",
+  "setting.barSpeedResetHint": "คลิกขวาเพื่อรีเซ็ตเป็น 1.0x",
   "setting.showPercent": "แสดง % CPU บนแถบ",
   "setting.invertDirection": "วิ่งไปทางซ้าย",
   "setting.sleepThreshold": "งีบเมื่อต่ำกว่า",

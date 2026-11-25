@@ -164,8 +164,27 @@ const CatFrames = loadQmlJs("CatFrames.js")
   assert.equal(Model.clampCatSize(4), 8)
   assert.equal(Model.clampCatSize(16), 16)
   assert.equal(Model.clampCatSize(99), 24)
+  assert.equal(Model.clampBarSpeed(undefined), 100)
+  assert.equal(Model.clampBarSpeed("bad"), 100)
+  assert.equal(Model.clampBarSpeed(10), 50)
+  assert.equal(Model.clampBarSpeed(180), 180)
+  assert.equal(Model.clampBarSpeed(999), 300)
+  assert.equal(Model.formatSpeedMultiplier(100), "1.0x")
+  assert.equal(Model.formatSpeedMultiplier(250), "2.5x")
   assert.equal(Model.clampRaceMode("load"), "load")
   assert.equal(Model.clampRaceMode("unknown"), "race")
+
+  // Main bar cat runs noticeably faster than legacy curve at default 100% and scales with barSpeed
+  assert.equal(Model.barFrameIntervalMs(50, true, 5, 100), 0)
+  assert.equal(Model.barFrameIntervalMs(3, false, 5, 200), 950)
+  const barSlow = Model.barFrameIntervalMs(10, false, 0, 50)
+  const barDefault = Model.barFrameIntervalMs(10, false, 0, 100)
+  const barFast = Model.barFrameIntervalMs(10, false, 0, 200)
+  const barTurbo = Model.barFrameIntervalMs(10, false, 0, 300)
+  assert.ok(barDefault < slow * 0.5, `Expected bar cat default to run >2x faster than legacy curve: bar=${barDefault}, legacy=${slow}`)
+  assert.ok(barSlow > barDefault && barDefault > barFast && barFast > barTurbo,
+    `Expected monotonic bar speed scaling: ${barSlow} > ${barDefault} > ${barFast} > ${barTurbo}`)
+  assert.ok(Model.barFrameIntervalMs(100, false, 0, 300) >= 18, "Bar frame interval must respect safe minimum floor")
 }
 
 // 8. Cat Gang realtime race simulation, speed scaling, overtaking, lap counting, and ranking
@@ -259,8 +278,9 @@ const CatFrames = loadQmlJs("CatFrames.js")
   const evilNet = Model.computeNetUsage(evilNet1, evilNet2, 1000)
   assert.ok(!evilNet.activeIface.includes("<") && !evilNet.activeIface.includes(">"), `Unsafe iface: ${evilNet.activeIface}`)
 
-  const tooltip = Model.buildTooltip("CatRun", "25", `${tracker} Zoomies`)
+  const tooltip = Model.buildTooltip("CatRun", "25", `${tracker} Zoomies`, `<b>1.5x</b>`)
   assert.ok(!tooltip.includes("<") && !tooltip.includes(">"), `Unsafe tooltip: ${tooltip}`)
+  assert.ok(tooltip.includes("1.5x"), `Expected speed in tooltip: ${tooltip}`)
   assert.ok(tooltip.length <= 120)
 }
 

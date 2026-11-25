@@ -36,6 +36,17 @@ function clampCatSize(value) {
   return Math.round(clamp(value, 8, 24))
 }
 
+var BAR_SPEED_MIN = 50
+var BAR_SPEED_MAX = 300
+var BAR_SPEED_DEFAULT = 100
+
+function clampBarSpeed(value) {
+  if (value === undefined || value === null || value === "") return BAR_SPEED_DEFAULT
+  var n = Number(value)
+  if (!isFinite(n)) return BAR_SPEED_DEFAULT
+  return Math.round(clamp(n, BAR_SPEED_MIN, BAR_SPEED_MAX))
+}
+
 function clampRaceMode(value) {
   return value === "load" ? "load" : "race"
 }
@@ -468,6 +479,24 @@ function frameIntervalMs(cpuPercent, paused, sleepThreshold) {
   return Math.round(360 - t * (360 - 38))
 }
 
+// Livelier top-bar cat cadence with user-adjustable speed percentage (50%..300%,
+// default 100% = 1.0x). At 1.0x: 135ms brisk trot at 0% -> 26ms zoomies at 100%.
+function barFrameIntervalMs(cpuPercent, paused, sleepThreshold, barSpeed) {
+  if (paused) return 0
+  if (isSleeping(cpuPercent, paused, sleepThreshold)) return 950
+  var pct = clamp(cpuPercent, 0, 100)
+  var mult = clampBarSpeed(barSpeed) / 100
+  var t = Math.pow(pct / 100, 0.72)
+  var baseMs = 135 - t * (135 - 26)
+  return Math.round(clamp(baseMs / mult, 18, 400))
+}
+
+function formatSpeedMultiplier(barSpeed, formatNumberFn) {
+  var mult = clampBarSpeed(barSpeed) / 100
+  var formatted = typeof formatNumberFn === "function" ? formatNumberFn(mult, 1) : mult.toFixed(1)
+  return formatted + "x"
+}
+
 function framesPerSecond(intervalMs) {
   if (!isFinite(intervalMs) || intervalMs <= 0) return 0
   return Math.round((1000 / intervalMs) * 10) / 10
@@ -647,9 +676,14 @@ function formatByteRate(bytesPerSec, formatNumberFn) {
   return fmt(bps / (1024 * 1024 * 1024), 2) + " GB/s"
 }
 
-function buildTooltip(title, cpuFormatted, paceLabel) {
+function buildTooltip(title, cpuFormatted, paceLabel, speedLabel) {
   var safeTitle = sanitizeText(title, 32)
   var safeCpu = sanitizeText(cpuFormatted, 16)
   var safePace = sanitizeText(paceLabel, 48)
-  return sanitizeText(safeTitle + " · " + safeCpu + "% · " + safePace, MAX_TOOLTIP_LEN)
+  var base = safeTitle + " · " + safeCpu + "% · " + safePace
+  if (speedLabel !== undefined && speedLabel !== null && String(speedLabel) !== "") {
+    var safeSpeed = sanitizeText(speedLabel, 16)
+    if (safeSpeed) base += " · " + safeSpeed
+  }
+  return sanitizeText(base, MAX_TOOLTIP_LEN)
 }

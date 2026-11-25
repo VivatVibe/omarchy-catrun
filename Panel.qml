@@ -23,6 +23,9 @@ Panel {
   readonly property int catSize: Model.clampCatSize(setting("catSize", 16))
   property int catSizePreview: -1
   readonly property int effectiveCatSize: catSizePreview > 0 ? catSizePreview : catSize
+  readonly property int barSpeed: Model.clampBarSpeed(setting("barSpeed", 100))
+  property int barSpeedPreview: -1
+  readonly property int effectiveBarSpeed: barSpeedPreview > 0 ? barSpeedPreview : barSpeed
   readonly property bool showPercent: setting("showPercent", false) === true
   readonly property int sleepThreshold: Model.clampSleepThreshold(setting("sleepThreshold", 0))
   readonly property bool invertDirection: setting("invertDirection", false) === true
@@ -81,7 +84,7 @@ Panel {
   property bool paused: false
   property int frameIndex: 0
   readonly property bool sleeping: Model.isSleeping(cpuPercent, paused, sleepThreshold)
-  readonly property int frameIntervalMs: Model.frameIntervalMs(cpuPercent, paused, sleepThreshold)
+  readonly property int frameIntervalMs: Model.barFrameIntervalMs(cpuPercent, paused, sleepThreshold, effectiveBarSpeed)
   readonly property real currentFps: Model.framesPerSecond(frameIntervalMs)
   readonly property bool catMirrored: invertDirection !== Commons.I18n.rightToLeft
 
@@ -95,7 +98,8 @@ Panel {
   readonly property string titleText: Model.sanitizeText(strings.t("plugin.title", "CatRun"), 32)
   readonly property string paceText: Model.sanitizeText(strings.t(Model.paceKey(cpuPercent, paused, sleepThreshold)), 48)
   readonly property string cpuPercentText: Commons.I18n.formatNumber(Math.round(cpuPercent))
-  readonly property string barTooltipText: Model.buildTooltip(titleText, cpuPercentText, paceText)
+  readonly property string barSpeedText: Model.formatSpeedMultiplier(effectiveBarSpeed, Commons.I18n.formatNumber)
+  readonly property string barTooltipText: Model.buildTooltip(titleText, cpuPercentText, paceText, barSpeedText)
   readonly property string pauseHintText: Model.sanitizeText(
     paused ? strings.t("toggle.resumeHint") : strings.t("toggle.pauseHint"), 64)
 
@@ -147,6 +151,7 @@ Panel {
   readonly property var cursorRows: {
     var rows = [
       "hero",
+      "barSpeed",
       "lane:cpu",
       "lane:gpu",
       "lane:ram",
@@ -180,7 +185,7 @@ Panel {
       return
     }
     if (!animTimer.running) {
-      animTimer.interval = Math.max(36, root.frameIntervalMs)
+      animTimer.interval = Math.max(18, root.frameIntervalMs)
       animTimer.start()
     }
   }
@@ -214,6 +219,20 @@ Panel {
     var clamped = Model.clampCatSize(value)
     root.catSizePreview = -1
     saveSettings({ catSize: clamped })
+  }
+
+  function setBarSpeed(value) {
+    var clamped = Model.clampBarSpeed(value)
+    root.barSpeedPreview = -1
+    saveSettings({ barSpeed: clamped })
+    if (!root.paused && root.frameIntervalMs > 0) {
+      var nextInterval = Math.max(18, root.frameIntervalMs)
+      if (!animTimer.running || animTimer.interval > nextInterval) {
+        animTimer.stop()
+        animTimer.interval = nextInterval
+        animTimer.start()
+      }
+    }
   }
 
   function setRaceMode(mode) {
@@ -405,6 +424,7 @@ Panel {
       intervalMs: root.frameIntervalMs,
       fps: root.currentFps,
       catSize: root.catSize,
+      barSpeed: root.barSpeed,
       showPercent: root.showPercent,
       sleepThreshold: root.sleepThreshold,
       invertDirection: root.invertDirection,
@@ -428,6 +448,7 @@ Panel {
     function togglePause(): string { root.togglePause(); return root.paused ? "paused" : "running" }
     function togglePercent(): string { root.togglePercent(); return root.showPercent ? "on" : "off" }
     function setSize(px: string): string { root.setCatSize(Number(px)); return String(root.catSize) }
+    function setSpeed(pct: string): string { root.setBarSpeed(Number(pct)); return String(root.barSpeed) }
     function setRaceMode(mode: string): string { root.setRaceMode(mode); return root.raceMode }
     function resetRace(): string { root.resetRace(); return "reset" }
     function selectDevice(id: string): string { return root.selectDevice(id) ? root.selectedDeviceId : "invalid" }
@@ -443,6 +464,7 @@ Panel {
       refreshDetails()
     } else {
       catSizePreview = -1
+      barSpeedPreview = -1
     }
   }
 
@@ -596,7 +618,7 @@ Panel {
       if (root.paused || root.frameIntervalMs <= 0) return
       var count = root.sleeping ? CatFrames.SLEEP_FRAMES.length : CatFrames.RUN_FRAMES.length
       root.frameIndex = (root.frameIndex + 1) % count
-      interval = Math.max(36, root.frameIntervalMs)
+      interval = Math.max(18, root.frameIntervalMs)
       start()
     }
   }
@@ -668,6 +690,14 @@ Panel {
       else if (buttonCode === Qt.MiddleButton) root.togglePause()
       else root.toggle()
     }
+
+    onWheelMoved: function(delta) {
+      if (delta === 0) return
+      root.setBarSpeed(root.barSpeed + (delta > 0 ? 20 : -20))
+      if (root.bar && button.tooltipHovered) {
+        root.bar.showTooltip(button, root.barTooltipText)
+      }
+    }
   }
 
   KeyboardPanel {
@@ -690,7 +720,8 @@ Panel {
         if (dy !== 0) {
           root.moveCursor(dy)
         } else if (dx !== 0) {
-          if (root.currentRow === "catSize") root.setCatSize(root.catSize + dx)
+          if (root.currentRow === "barSpeed") root.setBarSpeed(root.barSpeed + dx * 10)
+          else if (root.currentRow === "catSize") root.setCatSize(root.catSize + dx)
           else if (root.currentRow === "sleepThreshold") root.setSleepThreshold(root.sleepThreshold + dx)
         }
       }
@@ -699,6 +730,8 @@ Panel {
       onTabRequested: function(direction) { root.switchPanel(direction) }
       onTextKey: function(ch) {
         if (ch === " ") root.togglePause()
+        else if (ch === "+" || ch === "=" || ch === "]") root.setBarSpeed(root.barSpeed + 20)
+        else if (ch === "-" || ch === "_" || ch === "[") root.setBarSpeed(root.barSpeed - 20)
         else if (ch === "m" || ch === "M") root.toggleRaceMode()
         else if (ch === "0") root.resetRace()
         else if (ch === "p" || ch === "P") root.togglePercent()
@@ -776,6 +809,78 @@ Panel {
                     fontFamily: hero.fontFamily
                   }
                 }
+              }
+            }
+          }
+
+          PanelSeparator { foreground: root.foreground }
+
+          // ---------- Top Bar Cat Speed Control ----------
+          Column {
+            width: parent.width
+            spacing: Style.space(4)
+
+            Item {
+              width: parent.width
+              implicitHeight: Math.max(barSpeedHeader.implicitHeight, barSpeedValue.implicitHeight)
+
+              PlainText {
+                id: barSpeedHeader
+                text: strings.t("setting.barSpeed", "Bar cat speed")
+                color: root.dim
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.bodySmall
+                anchors.left: parent.left
+                anchors.leftMargin: Style.space(4)
+                anchors.verticalCenter: parent.verticalCenter
+              }
+
+              PlainText {
+                id: barSpeedValue
+                text: {
+                  var speedLabel = Model.formatSpeedMultiplier(
+                    barSpeedSlider.dragging ? barSpeedSlider.liveValue : root.effectiveBarSpeed,
+                    Commons.I18n.formatNumber
+                  )
+                  if (root.paused || root.sleeping) return speedLabel
+                  return speedLabel + " · " + strings.t("stat.fps", "%1 fps").arg(Commons.I18n.formatNumber(root.currentFps, 1))
+                }
+                color: root.foreground
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.caption
+                font.bold: true
+                anchors.right: parent.right
+                anchors.rightMargin: Style.space(4)
+                anchors.verticalCenter: parent.verticalCenter
+              }
+            }
+
+            CursorSurface {
+              width: parent.width
+              height: barSpeedSlider.implicitHeight + Style.spacing.controlGap
+              hasCursor: root.currentRow === "barSpeed"
+              foreground: root.foreground
+              outline: true
+
+              PanelSlider {
+                id: barSpeedSlider
+                bar: root.bar
+                anchors.fill: parent
+                anchors.leftMargin: Style.space(6)
+                anchors.rightMargin: Style.space(6)
+                minimum: 50
+                maximum: 300
+                step: 10
+                integer: true
+                tickCount: 6
+                value: root.barSpeed
+                onMoved: function(v) { root.barSpeedPreview = Model.clampBarSpeed(v) }
+                onReleased: function(v) { root.setBarSpeed(v) }
+                onRightClicked: root.setBarSpeed(100)
+              }
+
+              HoverHandler {
+                onHoveredChanged: if (hovered) root.setHoverRow("barSpeed")
               }
             }
           }
